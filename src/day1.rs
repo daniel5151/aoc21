@@ -5,19 +5,15 @@ macro_rules! munge_input {
         let input = $input;
         input
             .split('\n')
-            .map(|s| s.parse::<isize>().unwrap())
-            .collect::<Vec<_>>()
+            .map(|s| s.parse::<isize>())
+            .collect::<Result<Vec<_>, _>>()?
     }};
 }
 
 pub fn q1(input: &str, _args: &[&str]) -> DynResult<usize> {
     let input = munge_input!(input);
 
-    let res = input
-        .windows(2)
-        .map(|c| c[1] - c[0])
-        .filter(|x| *x > 0)
-        .count();
+    let res = input.array_windows::<2>().filter(|c| c[1] > c[0]).count();
 
     Ok(res)
 }
@@ -26,12 +22,11 @@ pub fn q2(input: &str, _args: &[&str]) -> DynResult<usize> {
     let input = munge_input!(input);
 
     let res = input
-        .windows(3)
+        .array_windows::<3>()
         .map(|c| c.iter().sum())
         .collect::<Vec<isize>>()
-        .windows(2)
-        .map(|c| c[1] - c[0])
-        .filter(|x| *x > 0)
+        .array_windows::<2>()
+        .filter(|c| c[1] > c[0])
         .count();
 
     Ok(res)
