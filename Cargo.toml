@@ -1,0 +1,22 @@
+[package]
+name = "aoc20"
+version = "0.1.0"
+authors = ["Daniel Prilik <danielprilik@gmail.com>"]
+edition = "2021"
+
+[features]
+default = []
+
+[dependencies]
+itertools = "0.10"
+num-traits = "0.2"
+
+# too lazy to rewrite this in-tree
+iter_to_array = { git = "https://github.com/yyogo/iter_to_array.git", branch = "main" }
+
+[profile.dev]
+codegen-units = 4
+incremental = true
+lto = false
+opt-level = 1
+panic = 'unwind'
