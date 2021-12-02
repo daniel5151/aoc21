@@ -6,6 +6,7 @@
 // useful std stuff
 pub use std::collections::*;
 pub use std::io::prelude::*;
+pub use std::str::FromStr;
 
 // useful extern crates
 pub use iter_to_array::*; // collect into fixed size arrays
