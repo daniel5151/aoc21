@@ -15,7 +15,6 @@ num-traits = "0.2"
 iter_to_array = { git = "https://github.com/yyogo/iter_to_array.git", branch = "main" }
 
 [profile.dev]
-codegen-units = 4
 incremental = true
 lto = false
 opt-level = 1
