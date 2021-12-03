@@ -3,118 +3,91 @@ use crate::prelude::*;
 macro_rules! munge_input {
     ($input:ident) => {{
         let input = $input;
-        input.split('\n').map(|s| s.as_bytes()).collect::<Vec<_>>()
+        let input = input.split('\n').collect::<HashSet<_>>();
+        if !input.iter().map(|s| s.len()).all_equal() {
+            return Err("binary strings must be equal length".into());
+        }
+        let len = input
+            .iter()
+            .next()
+            .ok_or("must have at least one input string")?
+            .len();
+        (input, len)
     }};
 }
 
-pub fn q1(input: &str, _args: &[&str]) -> DynResult<usize> {
-    let input = munge_input!(input);
+type Answer = usize;
 
-    let mut g: usize = 0;
+pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
+    let (input, len) = munge_input!(input);
 
-    let len = input[0].len();
+    let mut gamma: usize = 0;
+
     for i in 0..len {
         let mut more_zero: isize = 0;
         for s in &input {
-            match s[i] {
+            match s.as_bytes()[i] {
                 b'0' => more_zero += 1,
                 b'1' => more_zero -= 1,
-                _ => panic!(),
+                _ => return Err("unexpected char".into()),
             }
         }
-        g <<= 1;
-        g += if more_zero > 0 { 0 } else { 1 };
+
+        gamma <<= 1;
+        gamma |= if more_zero > 0 { 0 } else { 1 };
     }
 
-    let ans = g * (!g & (!0usize >> (64 - len)));
+    // epsilon is just the binary invert of gamma
+    let epsilon = !gamma & (!0 >> (core::mem::size_of::<usize>() * 8 - len));
+
+    let ans = gamma * epsilon;
 
     Ok(ans)
 }
 
-pub fn q2(input: &str, _args: &[&str]) -> DynResult<usize> {
-    let input = input.split('\n').collect::<HashSet<_>>();
-    let len = input.iter().next().unwrap().len();
-
-    let mut o2 = input.clone();
-    let mut co2 = input.clone();
-
-    let mut o2_val = None;
-    let mut co2_val = None;
+fn filter(mut vals: HashSet<&str>, len: usize, most_common: bool) -> DynResult<usize> {
+    let mut final_val = None;
 
     for i in 0..len {
-        {
-            let mut more_zero: isize = 0;
-            let mut with_zero = HashSet::new();
-            let mut with_one = HashSet::new();
+        let mut more_zero: isize = 0;
+        let mut with_zero = HashSet::new();
+        let mut with_one = HashSet::new();
 
-            for s in &o2 {
-                match s.as_bytes()[i] {
-                    b'0' => {
-                        more_zero += 1;
-                        with_zero.insert(*s);
-                    }
-                    b'1' => {
-                        more_zero -= 1;
-                        with_one.insert(*s);
-                    }
-                    _ => panic!(),
+        for s in &vals {
+            match s.as_bytes()[i] {
+                b'0' => {
+                    more_zero += 1;
+                    with_zero.insert(*s);
                 }
-            }
-
-            let next_o2: HashSet<_>;
-
-            if more_zero > 0 {
-                next_o2 = with_zero;
-            } else {
-                next_o2 = with_one;
-            }
-
-            o2 = next_o2;
-
-            if o2.len() == 1 {
-                o2_val = o2.iter().next().copied();
+                b'1' => {
+                    more_zero -= 1;
+                    with_one.insert(*s);
+                }
+                _ => return Err("unexpected char".into()),
             }
         }
 
-        {
-            let mut more_zero: isize = 0;
-            let mut with_zero = HashSet::new();
-            let mut with_one = HashSet::new();
+        if more_zero > 0 {
+            vals = if most_common { with_zero } else { with_one }
+        } else {
+            vals = if most_common { with_one } else { with_zero }
+        }
 
-            for s in &co2 {
-                match s.as_bytes()[i] {
-                    b'0' => {
-                        more_zero += 1;
-                        with_zero.insert(*s);
-                    }
-                    b'1' => {
-                        more_zero -= 1;
-                        with_one.insert(*s);
-                    }
-                    _ => panic!(),
-                }
-            }
-
-            let next_co2: HashSet<_>;
-
-            if more_zero > 0 {
-                next_co2 = with_one;
-            } else {
-                next_co2 = with_zero;
-            }
-
-            co2 = next_co2;
-
-            if co2.len() == 1 {
-                co2_val = co2.iter().next().copied();
-            }
+        if vals.len() == 1 {
+            final_val = vals.iter().next().copied();
         }
     }
 
-    let o2 = usize::from_str_radix(o2_val.unwrap(), 2).unwrap();
-    let co2 = usize::from_str_radix(co2_val.unwrap(), 2).unwrap();
+    Ok(usize::from_str_radix(final_val.unwrap(), 2)?)
+}
 
-    let ans = o2 * co2;
+pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
+    let (input, len) = munge_input!(input);
+
+    let o2 = filter(input.clone(), len, true)?;
+    let co2 = filter(input.clone(), len, false)?;
+
+    let ans = co2 * o2;
 
     Ok(ans)
 }

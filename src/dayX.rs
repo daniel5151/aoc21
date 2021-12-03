@@ -7,7 +7,9 @@ macro_rules! munge_input {
     }};
 }
 
-pub fn q1(input: &str, _args: &[&str]) -> DynResult<isize> {
+type Answer = usize;
+
+pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
     let input = munge_input!(input);
 
     let _ = input;
@@ -16,7 +18,7 @@ pub fn q1(input: &str, _args: &[&str]) -> DynResult<isize> {
     Ok(ans)
 }
 
-pub fn q2(input: &str, _args: &[&str]) -> DynResult<isize> {
+pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
     let input = munge_input!(input);
 
     let _ = input;

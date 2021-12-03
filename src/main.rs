@@ -1,4 +1,8 @@
-#![allow(clippy::unreadable_literal, clippy::type_complexity)]
+#![allow(
+    clippy::collapsible_else_if,
+    clippy::type_complexity,
+    clippy::unreadable_literal
+)]
 #![feature(array_windows)]
 
 #[macro_use]
