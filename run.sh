@@ -16,4 +16,4 @@ if [ ! -f "$INPUTFILE" ]; then
     fi
 fi
 
-cargo run -- "$@"
+cargo test -- --test-threads=1 --nocapture "day$DAY" && cargo run -- "$@"

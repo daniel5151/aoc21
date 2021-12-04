@@ -1,30 +1,36 @@
-use crate::prelude::*;
+// lints that are loud when speedrunning. removed before commit
+#![allow(unused_mut, clippy::let_and_return)]
 
-macro_rules! munge_input {
-    ($input:ident) => {{
-        let input = $input;
-        input.split('\n')
-    }};
-}
+use crate::prelude::*;
 
 type Answer = usize;
 
 pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = munge_input!(input);
+    let input = {
+        let mut input = input.split('\n');
+
+        // let init = input.next().unwrap();
+
+        let input = input
+            .map(|s| -> DynResult<_> {
+                let res = {
+                    // parse
+                    s
+                };
+                Ok(res)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        input
+    };
 
     let _ = input;
-    let ans = 0;
-
-    Ok(ans)
+    todo!()
 }
 
 pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = munge_input!(input);
-
     let _ = input;
-    let ans = 0;
-
-    Ok(ans)
+    todo!()
 }
 
 #[cfg(test)]
