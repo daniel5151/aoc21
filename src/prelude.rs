@@ -4,6 +4,8 @@
 //! keep growing as more questions get solved.
 
 // useful std stuff
+pub use core::fmt::Debug;
+pub use core::fmt::Display;
 pub use std::collections::*;
 pub use std::io::prelude::*;
 pub use std::str::FromStr;

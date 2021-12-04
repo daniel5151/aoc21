@@ -4,147 +4,138 @@ macro_rules! munge_input {
     ($input:ident) => {{
         let input = $input;
 
-        let mut input = input.split('\n');
+        let mut input = input.split("\n\n");
 
         let nums = input
             .next()
             .unwrap()
             .split(',')
-            .map(|n| n.parse::<usize>())
+            .map(|n| n.parse::<u8>())
             .collect::<Result<Vec<_>, _>>()?;
 
-        input.next().unwrap();
+        let boards = input
+            .map(|s| -> DynResult<_> {
+                let mut b: [[(u8, bool); 5]; 5] = Default::default();
+                for (ln, b_row) in s.split('\n').zip(b.iter_mut()) {
+                    for (n, b_e) in ln.split_whitespace().zip(b_row.iter_mut()) {
+                        *b_e = (n.parse::<u8>()?, false);
+                    }
+                }
 
-        let mut boards: Vec<[[(usize, bool); 5]; 5]> = Vec::new();
-
-        let mut board = [[(0, false); 5]; 5];
-        let mut row_i = 0;
-
-        for ln in input {
-            if ln.is_empty() {
-                boards.push(board);
-                board = [[(0, false); 5]; 5];
-                row_i = 0;
-                continue;
-            }
-
-            let row = ln
-                .split_whitespace()
-                .map(|s| s.parse::<usize>())
-                .collect::<Result<Vec<_>, _>>()?;
-
-            for (i, e) in row.into_iter().enumerate() {
-                board[row_i][i] = (e, false);
-            }
-
-            row_i += 1;
-        }
-        boards.push(board);
+                Ok(Board { board: b })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         (nums, boards)
     }};
 }
 
-type Answer = usize;
+#[derive(Clone, Copy)]
+struct Board {
+    board: [[(u8, bool); 5]; 5],
+}
 
-fn check_board(board: [[(usize, bool); 5]; 5]) -> bool {
-    // horiz
-    if board
-        .into_iter()
-        .map(|row| row.into_iter().all(|(_, c)| c))
-        .any(|s| s)
-    {
-        return true;
-    }
-
-    for col in 0..5 {
-        let mut n = 0;
-        for row in board {
-            n += if row[col].1 { 1 } else { 0 };
-        }
-        if n == 5 {
+impl Board {
+    fn check(&self) -> bool {
+        // horizontal
+        if self
+            .board
+            .into_iter()
+            .map(|row| row.into_iter().all(|(_, c)| c))
+            .any(|row| row)
+        {
             return true;
         }
+
+        // vertical
+        for col in 0..5 {
+            if self
+                .board
+                .into_iter()
+                .map(|row| row[col].1)
+                .fold(true, |a, c| a & c)
+            {
+                return true;
+            }
+        }
+
+        false
     }
 
-    // if board[0][0].1 && board[1][1].1 && board[2][2].1 && board[3][3].1 &&
-    // board[4][4].1 {     return true;
-    // }
-
-    // if board[0][4].1 && board[1][3].1 && board[2][2].1 && board[3][1].1 &&
-    // board[4][0].1 {     return true;
-    // }
-
-    false
-}
-
-fn update_board(board: &mut [[(usize, bool); 5]; 5], n: usize) {
-    for row in board {
-        for e in row {
-            if e.0 == n {
-                e.1 = true;
+    fn update(&mut self, n: u8) {
+        for (e, c) in self.board.iter_mut().flat_map(|row| row.iter_mut()) {
+            if *e == n {
+                *c = true;
             }
         }
     }
+
+    fn score(&self) -> usize {
+        self.board
+            .into_iter()
+            .flat_map(|row| row.into_iter())
+            .filter(|(_, c)| !c)
+            .map(|(n, _)| n as usize)
+            .sum()
+    }
 }
 
-fn uncalled_board(board: [[(usize, bool); 5]; 5]) -> usize {
-    let mut sum = 0;
-    for row in board {
-        for (n, checked) in row {
-            if !checked {
-                sum += n;
+impl Debug for Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for row in self.board.into_iter() {
+            writeln!(f)?;
+            for (n, c) in row {
+                let (l, r) = if c {
+                    // black text on green background
+                    ("\x1b[30;42m", "\x1b[0m")
+                } else {
+                    ("", "")
+                };
+                write!(f, "{}{:2?}{} ", l, n, r)?;
             }
         }
+        Ok(())
     }
-    sum
 }
 
-fn print_board(board: [[(usize, bool); 5]; 5]) -> String {
-    use std::fmt::Write;
-
-    let mut s = String::new();
-    for row in board {
-        writeln!(s).unwrap();
-        for (n, i) in row {
-            write!(s, "{:2?} {} ", n, if i { "X" } else { " " }).unwrap();
-        }
-    }
-    s
-}
+type Answer = usize;
 
 pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let (nums, mut boards) = munge_input!(input);
+    let input = munge_input!(input);
+
+    let (nums, mut boards) = input;
 
     for num in nums {
-        for board in &mut boards {
-            update_board(board, num);
-            if check_board(*board) {
-                return Ok(num * uncalled_board(*board));
+        for board in boards.iter_mut() {
+            board.update(num);
+            if board.check() {
+                dbg!(&board);
+                return Ok(num as usize * board.score());
             }
         }
     }
 
-    unreachable!()
+    Err("no winning board".into())
 }
 
 pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let (nums, mut boards) = munge_input!(input);
+    let input = munge_input!(input);
+
+    let (nums, mut boards) = input;
 
     for num in nums {
-        if boards.len() == 1 {
-            update_board(&mut boards[0], num);
-            if check_board(boards[0]) {
-                return Ok(num * uncalled_board(boards[0]));
-            }
-        }
         for board in &mut boards {
-            update_board(board, num);
+            board.update(num);
         }
-        boards.retain(|board| !check_board(*board));
+
+        if boards.len() == 1 && boards[0].check() {
+            return Ok(num as usize * boards[0].score());
+        }
+
+        boards.retain(|board| !board.check());
     }
 
-    unreachable!()
+    Err("no winning board".into())
 }
 
 #[cfg(test)]
