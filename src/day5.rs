@@ -1,36 +1,30 @@
-// lints that are loud when speedrunning. removed before commit
-#![allow(unused_mut, clippy::let_and_return)]
-
 use crate::prelude::*;
 
 type Answer = usize;
 
-pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = {
-        let mut input = input.split('\n');
+// using isize as input vals never exceed 1000
+type Input = Vec<((isize, isize), (isize, isize))>;
 
-        // let init = input.next().unwrap();
+fn munge_input(input: &str) -> DynResult<Input> {
+    input
+        .split('\n')
+        .map(|s| -> DynResult<_> {
+            let res = {
+                // parse
+                let (n1, n2) = s.split_once(" -> ").ok_or("misisng ->")?;
+                let (x1, y1) = n1.split_once(',').ok_or("missing first , separator")?;
+                let (x2, y2) = n2.split_once(',').ok_or("missing second , separator")?;
+                (
+                    (x1.parse::<isize>()?, y1.parse::<isize>()?),
+                    (x2.parse::<isize>()?, y2.parse::<isize>()?),
+                )
+            };
+            Ok(res)
+        })
+        .collect::<Result<Vec<_>, _>>()
+}
 
-        let input = input
-            .map(|s| -> DynResult<_> {
-                let res = {
-                    // parse
-                    let (n1, n2) = s.split_once(" -> ").ok_or("misisng ->")?;
-                    let (x1, y1) = n1.split_once(',').ok_or("missing , separator")?;
-                    let (x2, y2) = n2.split_once(',').ok_or("missing , separator")?;
-
-                    (
-                        (x1.parse::<isize>()?, y1.parse::<isize>()?),
-                        (x2.parse::<isize>()?, y2.parse::<isize>()?),
-                    )
-                };
-                Ok(res)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        input
-    };
-
+fn tally(input: Input, count_diag: bool) -> DynResult<Answer> {
     let mut points: HashMap<(isize, isize), isize> = Default::default();
 
     for ((x1, y1), (x2, y2)) in input {
@@ -43,92 +37,41 @@ pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
                 *points.entry((x, y1)).or_default() += 1;
             }
         } else {
-            // skip in q1
-            continue;
+            if !count_diag {
+                continue;
+            }
+
+            let ((sx, sy), (ex, ey)) = {
+                if x1 < x2 {
+                    ((x1, y1), (x2, y2))
+                } else {
+                    ((x2, y2), (x1, y1))
+                }
+            };
+
+            let dy = if sy < ey { 1 } else { -1 };
+
+            let mut y = sy;
+            for x in sx..=ex {
+                *points.entry((x, y)).or_default() += 1;
+                y += dy;
+            }
         }
     }
 
-    let ans = points.into_iter().filter(|(_, count)| *count > 1).count();
+    let ans = points.into_values().filter(|c| *c > 1).count();
 
     Ok(ans)
 }
 
+pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
+    let input = munge_input(input)?;
+    tally(input, false)
+}
+
 pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = {
-        let mut input = input.split('\n');
-
-        // let init = input.next().unwrap();
-
-        let input = input
-            .map(|s| -> DynResult<_> {
-                let res = {
-                    // parse
-                    let (n1, n2) = s.split_once(" -> ").ok_or("misisng ->")?;
-                    let (x1, y1) = n1.split_once(',').ok_or("missing , separator")?;
-                    let (x2, y2) = n2.split_once(',').ok_or("missing , separator")?;
-
-                    (
-                        (x1.parse::<isize>()?, y1.parse::<isize>()?),
-                        (x2.parse::<isize>()?, y2.parse::<isize>()?),
-                    )
-                };
-                Ok(res)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        input
-    };
-
-    let mut points: HashMap<(isize, isize), isize> = Default::default();
-
-    for ((x1, y1), (x2, y2)) in input {
-        if x1 == x2 {
-            for y in y1.min(y2)..=y1.max(y2) {
-                *points.entry((x1, y)).or_default() += 1;
-            }
-        } else if y1 == y2 {
-            for x in x1.min(x2)..=x1.max(x2) {
-                *points.entry((x, y1)).or_default() += 1;
-            }
-        } else {
-            let start_x;
-            let start_y;
-            let end_x;
-            let y_update;
-
-            if x1 < x2 {
-                start_x = x1;
-                start_y = y1;
-                end_x = x2;
-
-                if y1 < y2 {
-                    y_update = 1;
-                } else {
-                    y_update = -1;
-                }
-            } else {
-                start_x = x2;
-                start_y = y2;
-                end_x = x1;
-
-                if y2 < y1 {
-                    y_update = 1;
-                } else {
-                    y_update = -1;
-                }
-            }
-
-            let mut y = start_y;
-            for x in start_x..=end_x {
-                *points.entry((x, y)).or_default() += 1;
-                y += y_update;
-            }
-        }
-    }
-
-    let ans = points.into_iter().filter(|(_, count)| *count > 1).count();
-
-    Ok(ans)
+    let input = munge_input(input)?;
+    tally(input, true)
 }
 
 #[cfg(test)]
