@@ -1,25 +1,22 @@
-// lints that are loud when speedrunning. removed before commit
-#![allow(unused_mut, clippy::let_and_return)]
-
 use crate::prelude::*;
 
 type Answer = usize;
 
+// using isize as input vals never exceed 1000
+type Input = Vec<usize>;
+
+fn munge_input(input: &str) -> DynResult<Input> {
+    input
+        .split(',')
+        .map(|s| -> DynResult<_> {
+            let res = { s.parse::<usize>()? };
+            Ok(res)
+        })
+        .collect::<Result<Vec<_>, _>>()
+}
+
 pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = {
-        let mut input = input.split(',');
-
-        // let init = input.next().unwrap();
-
-        let input = input
-            .map(|s| -> DynResult<_> {
-                let res = { s.parse::<usize>()? };
-                Ok(res)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        input
-    };
+    let input = munge_input(input)?;
 
     let mut fish = input;
     for _ in 0..80 {
@@ -39,20 +36,7 @@ pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
 }
 
 pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
-    let input = {
-        let mut input = input.split(',');
-
-        // let init = input.next().unwrap();
-
-        let input = input
-            .map(|s| -> DynResult<_> {
-                let res = { s.parse::<usize>()? };
-                Ok(res)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        input
-    };
+    let input = munge_input(input)?;
 
     let mut schools = [0; 9];
 
@@ -62,6 +46,8 @@ pub fn q2(input: &str, _args: &[&str]) -> DynResult<Answer> {
 
     for _ in 0..256 {
         let new = schools[0];
+        // could use copy_within, but that's wordier, and we can just override
+        // the bogus schools[8] value post-rotate instead
         schools.rotate_left(1);
         schools[8] = new;
         schools[6] += new;
