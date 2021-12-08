@@ -5,6 +5,9 @@ use crate::prelude::*;
 
 type Answer = usize;
 
+// type Input = Vec<usize>;
+// fn munge_input(input: &str) -> DynResult<Input> {}
+
 pub fn q1(input: &str, _args: &[&str]) -> DynResult<Answer> {
     let input = {
         let mut input = input.split('\n');
